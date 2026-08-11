@@ -1,0 +1,44 @@
+name: "Build Media Hub image"
+
+# Fork do Media Hub: build simplificado (amd64 só, com cache) da imagem do
+# Postiz self-hosted com as duas permissões sensíveis de comentário removidas
+# dos providers de Facebook/Instagram. Ver PLANO-POSTIZ-MULTIAGENCIA.md.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.dev
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/oceontech/postiz-app:mediahub-latest
+          build-args: |
+            NEXT_PUBLIC_VERSION=mediahub-${{ github.sha }}
+          provenance: false
+          sbom: false

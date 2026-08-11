@@ -28,10 +28,12 @@ export class InstagramStandaloneProvider
   name = 'Instagram\n(Standalone)';
   isBetweenSteps = false;
   refreshCron = true;
+  // Fork Media Hub: removido 'instagram_business_manage_comments' — mesmo
+  // motivo do facebook.provider.ts (ver o comentário lá). Publicação,
+  // agendamento e insights não dependem dessa permissão.
   scopes = [
     'instagram_business_basic',
     'instagram_business_content_publish',
-    'instagram_business_manage_comments',
     'instagram_business_manage_insights',
   ];
     override maxConcurrentJob = 200; // Instagram standalone has stricter limits

@@ -30,11 +30,16 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
   isBetweenSteps = true;
+  // Fork Media Hub: removido 'pages_manage_engagement' (gerenciar/moderar
+  // comentário) — a Meta trata como permissão sensível, exige Revisão do
+  // Aplicativo com demonstração de uso real, e o Media Hub não tem (nem vai
+  // ter) tela de moderação de comentário. Sem essa permissão, publicação,
+  // agendamento e insights continuam intactos — é a única coisa que usa esse
+  // scope. Ver PLANO-POSTIZ-MULTIAGENCIA.md, seção "Mapa das conexões".
   scopes = [
     'pages_show_list',
     'business_management',
     'pages_manage_posts',
-    'pages_manage_engagement',
     'pages_read_engagement',
     'read_insights',
   ];
