@@ -10,6 +10,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  NotEnoughScopes,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -293,7 +294,16 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const { access_token } = await (
+    // Fork Media Hub: erro cru da Meta em cada passo, em vez de seguir com
+    // `undefined` até virar "Invalid API key" no controller. Ver
+    // PLANO-POSTIZ-MULTIAGENCIA.md.
+    if (!getAccessToken?.access_token) {
+      throw new NotEnoughScopes(
+        `[FB 1/4 oauth/access_token] ${JSON.stringify(getAccessToken)}`
+      );
+    }
+
+    const longLived = await (
       await fetch(
         'https://graph.facebook.com/v20.0/oauth/access_token' +
           '?grant_type=fb_exchange_token' +
@@ -303,22 +313,50 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    const { data } = await (
+    const { access_token } = longLived;
+    if (!access_token) {
+      throw new NotEnoughScopes(
+        `[FB 2/4 fb_exchange_token] ${JSON.stringify(longLived)}`
+      );
+    }
+
+    const permissionsResponse = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
       )
     ).json();
 
+    const { data } = permissionsResponse;
+    if (!Array.isArray(data)) {
+      throw new NotEnoughScopes(
+        `[FB 3/4 me/permissions] ${JSON.stringify(permissionsResponse)}`
+      );
+    }
+
     const permissions = data
       .filter((d: any) => d.status === 'granted')
       .map((p: any) => p.permission);
-    this.checkScopes(this.scopes, permissions);
 
-    const { id, name, picture } = await (
+    const missing = this.scopes.filter((s) => !permissions.includes(s));
+    if (missing.length) {
+      throw new NotEnoughScopes(
+        `[FB scopes] faltando: ${missing.join(', ')} | concedidas: ${
+          permissions.join(', ') || '(nenhuma)'
+        }`
+      );
+    }
+
+    const me = await (
       await fetch(
         `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
+
+    if (!me?.id) {
+      throw new NotEnoughScopes(`[FB 4/4 me] ${JSON.stringify(me)}`);
+    }
+
+    const { id, name, picture } = me;
 
     return {
       id,

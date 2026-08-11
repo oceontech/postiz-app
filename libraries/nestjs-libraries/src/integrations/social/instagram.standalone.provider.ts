@@ -7,6 +7,7 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
+  NotEnoughScopes,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -142,6 +143,10 @@ export class InstagramStandaloneProvider
     );
     formData.append('code', params.code);
 
+    // Fork Media Hub: cada passo agora falha com o erro CRU da Meta em vez de
+    // seguir em frente com `undefined` e terminar como "Invalid API key" no
+    // controller (mensagem que não tem nada a ver com a causa e torna
+    // impossível diagnosticar). Ver PLANO-POSTIZ-MULTIAGENCIA.md.
     const getAccessToken = await (
       await fetch('https://api.instagram.com/oauth/access_token', {
         method: 'POST',
@@ -149,7 +154,13 @@ export class InstagramStandaloneProvider
       })
     ).json();
 
-    const { access_token, expires_in, ...all } = await (
+    if (!getAccessToken?.access_token) {
+      throw new NotEnoughScopes(
+        `[IG 1/3 oauth/access_token] ${JSON.stringify(getAccessToken)}`
+      );
+    }
+
+    const longLived = await (
       await fetch(
         'https://graph.instagram.com/access_token' +
           '?grant_type=ig_exchange_token' +
@@ -159,13 +170,31 @@ export class InstagramStandaloneProvider
       )
     ).json();
 
+    const { access_token } = longLived;
+    if (!access_token) {
+      throw new NotEnoughScopes(
+        `[IG 2/3 ig_exchange_token] ${JSON.stringify(longLived)}`
+      );
+    }
+
+    if (!getAccessToken.permissions) {
+      throw new NotEnoughScopes(
+        `[IG scopes] resposta sem "permissions": ${JSON.stringify(getAccessToken)}`
+      );
+    }
     this.checkScopes(this.scopes, getAccessToken.permissions);
 
-    const { user_id, name, username, profile_picture_url } = await (
+    const me = await (
       await fetch(
         `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();
+
+    if (!me?.user_id) {
+      throw new NotEnoughScopes(`[IG 3/3 me] ${JSON.stringify(me)}`);
+    }
+
+    const { user_id, name, username, profile_picture_url } = me;
 
     return {
       id: user_id,
