@@ -4,7 +4,6 @@ import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import clsx from 'clsx';
 import { Button } from '@gitroom/react/form/button';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useCustomProviderFunction } from '@gitroom/frontend/components/launches/helpers/use.custom.provider.function';
 
 const SWR_OPTIONS = {
@@ -48,7 +47,6 @@ export function withContinueProvider<TItem, TSelection>(
   const {
     endpoint,
     swrKey,
-    titleKey,
     titleDefault,
     emptyStateMessages,
     getSelectionValue,
@@ -61,7 +59,6 @@ export function withContinueProvider<TItem, TSelection>(
   return function ContinueProviderComponent(props: ContinueProviderProps) {
     const { onSave, existingId, initialData, isSaving } = props;
     const call = useCustomProviderFunction();
-    const t = useT();
     const [selection, setSelection] = useState<TSelection | null>(null);
 
     const loadData = useCallback(async () => {
@@ -110,7 +107,7 @@ export function withContinueProvider<TItem, TSelection>(
         <div className="text-center flex flex-col justify-center items-center text-[18px] leading-[26px] h-[300px]">
           {emptyStateMessages.map((msg, index) => (
             <span key={msg.key}>
-              {t(msg.key, msg.text)}
+              {msg.text}
               {index < emptyStateMessages.length - 1 && (
                 <>
                   <br />
@@ -125,7 +122,10 @@ export function withContinueProvider<TItem, TSelection>(
 
     return (
       <div className="flex flex-col gap-[20px]">
-        <div>{t(titleKey, titleDefault)}</div>
+        {/* Fork Media Hub: o texto vem cru do provider, sem `t()`. Esta tela
+            aparece no meio da conexão de um canal do Media Hub, cujo idioma é
+            pt-BR; a tradução em inglês do Postiz venceria o texto padrão. */}
+        <div>{titleDefault}</div>
         <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer gap-[10px]">
           {filteredData.map((item) => (
             <div
@@ -142,7 +142,7 @@ export function withContinueProvider<TItem, TSelection>(
         </div>
         <div>
           <Button disabled={!selection || isSaving} loading={isSaving} onClick={handleSave}>
-            {t('save', 'Save')}
+            {isSaving ? 'Conectando…' : 'Conectar'}
           </Button>
         </div>
       </div>
