@@ -1,10 +1,30 @@
 'use client';
 
+/**
+ * DIVERGÊNCIA DO UPSTREAM — fork do Media Hub.
+ *
+ * Esta é a única tela que o usuário final vê fora do Media Hub durante a
+ * conexão de um canal: o OAuth da Meta volta para cá (o `redirect_uri`
+ * registrado no app aponta para este domínio), o token é trocado aqui e só
+ * então o navegador segue para o `returnURL` do Media Hub.
+ *
+ * Por isso ela foi neutralizada: saíram as manchas roxo/rosa e o spinner
+ * #612BD3 do Postiz, entraram os tokens do produto (#050506 / #F5F5F7 /
+ * #0A84FF) e os textos passaram a ser pt-BR literais — sem `useT`, porque a
+ * tradução em inglês venceria o texto padrão.
+ *
+ * **Sem nome nem logo de marca, de propósito**: o Media Hub é white-label por
+ * agência (plano Growth+), então estampar "Media Hub" aqui mostraria a marca
+ * errada para o cliente de uma agência que assina com a própria.
+ *
+ * Ao rebasear no upstream, conferir se estes quatro estados (carregando, erro,
+ * conta conectada e seleção de conta) continuam existindo.
+ */
+
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { HttpStatusCode } from 'axios';
 import { useRouter } from 'next/navigation';
 import { Redirect } from '@gitroom/frontend/components/layout/redirect';
-import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
@@ -30,7 +50,6 @@ export const ContinueIntegration: FC<{
 }> = (props) => {
   const { provider, searchParams, logged } = props;
   const { push } = useRouter();
-  const t = useT();
   const fetch = useFetch();
   const { extensionId, backendUrl } = useVariables();
   const [error, setError] = useState(false);
@@ -267,13 +286,7 @@ export const ContinueIntegration: FC<{
   // Success state for non-logged users without returnURL
   if (successState) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
-        </div>
-
+      <div className="flex flex-1 items-center justify-center text-[#F5F5F7] relative overflow-hidden">
         <div className="relative z-10 text-center">
           <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-green-500/20 flex items-center justify-center">
             <svg
@@ -289,14 +302,11 @@ export const ContinueIntegration: FC<{
             </svg>
           </div>
           <div className="text-[28px] font-semibold mb-[12px]">
-            {t('channel_connected', 'Channel Connected!')}
+            Conta conectada
           </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
+          <div className="text-[16px] text-[#A1A1AA] max-w-[400px]">
             {successState.message ||
-              t(
-                'channel_connected_description',
-                `Your ${providerDisplayName} channel has been successfully connected. You can close this window now.`
-              )}
+              `Sua conta do ${providerDisplayName} foi conectada. Você já pode fechar esta janela.`}
           </div>
         </div>
       </div>
@@ -306,25 +316,14 @@ export const ContinueIntegration: FC<{
   // Show the two-step selection UI
   if (twoStepState && Provider) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
-        </div>
-
+      <div className="flex flex-1 items-center justify-center text-[#F5F5F7] relative overflow-hidden">
         {/* Content */}
         <div className="relative z-10 w-full max-w-[550px] mx-auto px-[20px]">
-          <div className="bg-[#1A1919] rounded-[16px] p-[32px] flex flex-col gap-[24px]">
+          <div className="bg-[#161618] rounded-[16px] p-[32px] flex flex-col gap-[24px]">
             <div className="flex flex-col gap-[8px] text-center">
-              <h1 className="text-[24px] font-semibold">
-                {t('configure_your_channel', 'Configure Your Channel')}
-              </h1>
-              <p className="text-[14px] text-gray-400">
-                {t(
-                  'select_the_page_or_account',
-                  `Select the ${providerDisplayName} page or account you want to connect.`
-                )}
+              <h1 className="text-[24px] font-semibold">Escolha a conta</h1>
+              <p className="text-[14px] text-[#A1A1AA]">
+                {`Selecione a página ou conta do ${providerDisplayName} que você quer conectar.`}
               </p>
             </div>
 
@@ -364,13 +363,7 @@ export const ContinueIntegration: FC<{
 
   if (error) {
     return (
-      <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-        {/* Background gradient decoration */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-          <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
-        </div>
-
+      <div className="flex flex-1 items-center justify-center text-[#F5F5F7] relative overflow-hidden">
         <div className="relative z-10 text-center">
           <div className="w-[80px] h-[80px] mx-auto mb-[24px] rounded-full bg-red-500/20 flex items-center justify-center">
             <svg
@@ -386,14 +379,10 @@ export const ContinueIntegration: FC<{
             </svg>
           </div>
           <div className="text-[28px] font-semibold mb-[12px]">
-            {t('could_not_add_provider', 'Could not add provider')}
+            Não foi possível conectar
           </div>
-          <div className="text-[16px] text-gray-400 max-w-[400px]">
-            {errorMessage ||
-              t(
-                'you_are_being_redirected_back',
-                'An error occurred. Please try again.'
-              )}
+          <div className="text-[16px] text-[#A1A1AA] max-w-[400px]">
+            {errorMessage || 'Algo deu errado na autorização. Volte e tente de novo.'}
           </div>
           {logged && <Redirect url="/launches" delay={3000} />}
         </div>
@@ -403,23 +392,17 @@ export const ContinueIntegration: FC<{
 
   // Loading state
   return (
-    <div className="flex flex-1 items-center justify-center text-white relative overflow-hidden">
-      {/* Background gradient decoration */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#612BD3] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[250px] h-[250px] bg-[#FC69FF] rounded-full blur-[120px]" />
-      </div>
-
+    <div className="flex flex-1 items-center justify-center text-[#F5F5F7] relative overflow-hidden">
       <div className="relative z-10 text-center">
         <div className="text-[28px] font-semibold mb-[12px]">
-          {t('adding_channel', 'Adding Channel')}
+          Conectando sua conta
         </div>
-        <div className="text-[16px] text-gray-400">
-          {t('please_wait', 'Please wait while we connect your account...')}
+        <div className="text-[16px] text-[#A1A1AA]">
+          Isso leva alguns segundos. Não feche esta janela.
         </div>
         {/* Loading spinner */}
         <div className="mt-[32px] flex justify-center">
-          <div className="w-[48px] h-[48px] border-[3px] border-[#612BD3] border-t-transparent rounded-full animate-spin" />
+          <div className="w-[48px] h-[48px] border-[3px] border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     </div>
