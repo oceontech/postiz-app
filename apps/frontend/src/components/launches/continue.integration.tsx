@@ -228,23 +228,51 @@ export const ContinueIntegration: FC<{
       setIsSaving(true);
 
       try {
-        // Use public or authenticated endpoint based on the flow
-        const endpoint = logged
-          ? `/integrations/provider/${twoStepState.integrationId}/connect`
-          : `/integrations/public/provider/${twoStepState.integrationId}/connect`;
+        // Fork Media Hub: o caminho NÃO pode ser escolhido pelo cookie.
+        //
+        // A rota autenticada resolve a organização pelo cookie `auth` do
+        // navegador. Quem conecta pelo Media Hub nunca tem sessão aqui — exceto
+        // quem um dia entrou no painel do Postiz, e aí `logged` mandava a
+        // chamada para a rota autenticada, que procurava a integração na
+        // organização do painel em vez da organização da agência dona dela.
+        // Resultado: 404 no último passo de uma conexão que já tinha dado certo
+        // na Meta, e tela congelada (o `customFetch` devolve uma promessa que
+        // nunca resolve quando a resposta é recusada).
+        //
+        // Com `state` na URL, o fluxo veio de fora e a organização certa está no
+        // Redis, atrás da rota pública. A autenticada continua como segunda
+        // tentativa, para não quebrar quem usa o painel do Postiz de verdade.
+        const publicEndpoint = `/integrations/public/provider/${twoStepState.integrationId}/connect`;
+        const authedEndpoint = `/integrations/provider/${twoStepState.integrationId}/connect`;
+        const candidates = modifiedParams?.state
+          ? logged
+            ? [publicEndpoint, authedEndpoint]
+            : [publicEndpoint]
+          : [authedEndpoint];
 
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          body: JSON.stringify({ ...modifiedParams, ...data }),
-        });
+        let response: Response | null = null;
+        for (const endpoint of candidates) {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            body: JSON.stringify({ ...modifiedParams, ...data }),
+          });
+
+          if (
+            response.status === HttpStatusCode.Ok ||
+            response.status === HttpStatusCode.Created
+          ) {
+            break;
+          }
+        }
 
         if (
-          response.status !== HttpStatusCode.Ok &&
-          response.status !== HttpStatusCode.Created
+          !response ||
+          (response.status !== HttpStatusCode.Ok &&
+            response.status !== HttpStatusCode.Created)
         ) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData = await response?.json().catch(() => ({}));
           setErrorMessage(
-            errorData.message || 'Failed to save channel configuration'
+            errorData?.message || 'Não foi possível concluir a conexão do canal.'
           );
           setError(true);
           return;
