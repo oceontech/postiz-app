@@ -38,6 +38,19 @@ export default async function IntegrationLayout({
         .integration-return-scope input {
           font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
+        /* A barra de rolagem do design system do Media Hub: fina, sem trilho,
+           polegar no tom da borda forte. A do Postiz é clara e grossa e
+           dominava a lateral do cartão. */
+        .integration-return-scope ::-webkit-scrollbar { width: 10px; height: 10px; }
+        .integration-return-scope ::-webkit-scrollbar-track { background: transparent; }
+        .integration-return-scope ::-webkit-scrollbar-thumb {
+          background: #3C3C42;
+          border-radius: 8px;
+          border: 2px solid #161618;
+        }
+        .integration-return-scope ::-webkit-scrollbar-thumb:hover { background: #4A4A52; }
+        .integration-return-scope * { scrollbar-width: thin; scrollbar-color: #3C3C42 transparent; }
+
         .integration-return-scope {
           --color-primary: #0A84FF;
           --color-forth: #0A84FF;

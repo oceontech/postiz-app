@@ -149,9 +149,13 @@ export function withContinueProvider<TItem, TSelection>(
             </div>
           ))}
         </div>
-        {/* Largura cheia no celular, onde o polegar mira uma faixa e não um
-            botão de 120 px encostado à esquerda. */}
-        <div className="flex justify-stretch sm:justify-end">
+        {/* A linha de rodapé do cartão: marca à esquerda, ação à direita. No
+            celular a marca sai daqui (ela emoldura o cartão, ver
+            `continue.integration`) e o botão ocupa a largura toda, onde o
+            polegar mira uma faixa e não um botão de 120 px encostado à borda. */}
+        <div className="flex items-center justify-between gap-[12px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mediahub-logo.png" alt="Media Hub" className="hidden sm:block h-[22px] w-auto" />
           <Button
             className="rounded-[10px] w-full sm:w-auto"
             disabled={!selection || isSaving}
