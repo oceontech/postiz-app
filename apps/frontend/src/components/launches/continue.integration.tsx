@@ -23,13 +23,19 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { HttpStatusCode } from 'axios';
 import { useRouter } from 'next/navigation';
-import { Redirect } from '@gitroom/frontend/components/layout/redirect';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import dayjs from 'dayjs';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+
+/**
+ * Para onde mandar quem chega ao fim desta tela sem um retorno em mãos (um F5
+ * depois que o `redirect:{state}` saiu do Redis, por exemplo). Fixo porque este
+ * fork serve uma instância só, dedicada ao Media Hub.
+ */
+const MEDIA_HUB_URL = 'https://mediahub.social';
 
 interface TwoStepState {
   integrationId: string;
@@ -64,15 +70,20 @@ export const ContinueIntegration: FC<{
         // If returnURL exists, always redirect to it with the path params
         const params = path.includes('?') ? path.split('?')[1] : '';
         push(params ? `${returnURL}?${params}` : returnURL);
-      } else if (logged) {
-        // If logged in without returnURL, use normal navigation
-        push(path);
-      } else {
-        // If not logged in without returnURL, show success inline
-        setSuccessState({ message: successMessage });
+        return;
       }
+
+      // Fork Media Hub: SEM returnURL a gente termina aqui mesmo, nunca no
+      // painel (`/launches`).
+      //
+      // O upstream empurra o usuário logado para o painel quando não há
+      // returnURL, e é o que acontecia num F5 nesta tela: o `redirect:{state}`
+      // já foi consumido do Redis, então o retorno some e a pessoa cai dentro do
+      // Postiz. Quem conecta um canal usa o Media Hub e não faz ideia de que
+      // esta instância existe — nem deve fazer.
+      setSuccessState({ message: successMessage });
     },
-    [logged, push]
+    [push]
   );
   const modifiedParams = useMemo(() => {
     if (provider === 'mewe') {
@@ -335,6 +346,12 @@ export const ContinueIntegration: FC<{
             {successState.message ||
               `Sua conta do ${providerDisplayName} foi conectada. Você já pode fechar esta janela.`}
           </div>
+          <a
+            href={MEDIA_HUB_URL}
+            className="mt-[24px] inline-flex h-[40px] items-center rounded-[10px] bg-[#0A84FF] px-[24px] text-[14px] font-medium text-white"
+          >
+            Voltar ao Media Hub
+          </a>
         </div>
       </div>
     );
@@ -411,7 +428,12 @@ export const ContinueIntegration: FC<{
           <div className="text-[16px] text-[#A1A1AA] max-w-[400px]">
             {errorMessage || 'Algo deu errado na autorização. Volte e tente de novo.'}
           </div>
-          {logged && <Redirect url="/launches" delay={3000} />}
+          <a
+            href={MEDIA_HUB_URL}
+            className="mt-[24px] inline-flex h-[40px] items-center rounded-[10px] bg-[#0A84FF] px-[24px] text-[14px] font-medium text-white"
+          >
+            Voltar ao Media Hub
+          </a>
         </div>
       </div>
     );

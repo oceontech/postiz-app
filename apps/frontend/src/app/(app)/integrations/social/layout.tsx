@@ -39,18 +39,12 @@ export default async function IntegrationLayout({
           --new-btn-text: #FFFFFF;
         }
       `}</style>
-      <div className="integration-return-scope flex flex-1 flex-col">
-        {/*
-          A marca fica visível durante a conexão inteira. Quem autorizou a conta
-          na Meta precisa reconhecer para onde está voltando — e o revisor do App
-          Review precisa ver que este passo pertence ao app submetido, não a uma
-          ferramenta qualquer no meio do caminho.
-        */}
-        <header className="flex justify-center pt-[28px] pb-[8px]">
-          <img src="/mediahub-logo.png" alt="Media Hub" className="h-[26px] w-auto" />
-        </header>
-        <div className="flex flex-1">{children}</div>
-      </div>
+      {/*
+        Sem logo: a tela é uma passagem de poucos segundos, e uma marca pequena
+        no topo de uma tela vazia pesa mais do que informa. Quem precisa aparecer
+        aqui é o provider que a pessoa está autorizando, não nós.
+      */}
+      <div className="integration-return-scope flex flex-1">{children}</div>
     </div>
   );
 }
