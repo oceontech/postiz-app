@@ -414,7 +414,8 @@ export const ContinueIntegration: FC<{
         </div>
 
         <footer className="flex justify-center pt-[20px] sm:hidden">
-          <span className="text-[15px] font-medium tracking-[0.01em] text-[#F5F5F7]">media hub</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mediahub-wordmark.png" alt="Media Hub" className="h-[22px] w-auto" />
         </footer>
       </div>
     );

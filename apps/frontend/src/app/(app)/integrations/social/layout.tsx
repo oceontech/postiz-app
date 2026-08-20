@@ -30,13 +30,19 @@ export default async function IntegrationLayout({
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
       />
       <style>{`
+        /* O seletor universal com !important não é elegância: é a única forma
+           de a fonte valer aqui sem depender da ordem em que o CSS do Postiz
+           entra na página. O body desta instância carrega a classe do next/font
+           com Plus Jakarta Sans, e qualquer regra que ela aplique a um
+           descendente ganharia da herança deste bloco. Escopado à rota de
+           retorno, não vaza para o resto do Postiz.
+           (E nada de crases aqui dentro: este CSS mora num template literal.) */
         .integration-return-scope,
-        .integration-return-scope button,
-        .integration-return-scope input {
-          font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        .integration-return-scope * {
+          font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         }
         /* A barra de rolagem do design system do Media Hub: fina, sem trilho,
            polegar no tom da borda forte. A do Postiz é clara e grossa e

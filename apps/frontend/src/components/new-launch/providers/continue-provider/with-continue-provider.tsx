@@ -155,7 +155,7 @@ export function withContinueProvider<TItem, TSelection>(
             polegar mira uma faixa e não um botão de 120 px encostado à borda. */}
         <div className="flex items-center justify-between gap-[12px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/mediahub-logo.png" alt="Media Hub" className="hidden sm:block h-[22px] w-auto" />
+          <img src="/mediahub-logo.png" alt="Media Hub" className="hidden sm:block h-[30px] w-auto" />
           <Button
             className="rounded-[10px] w-full sm:w-auto"
             disabled={!selection || isSaving}
