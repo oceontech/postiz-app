@@ -130,9 +130,15 @@ export function withContinueProvider<TItem, TSelection>(
           {filteredData.map((item) => (
             <div
               key={getItemId(item)}
+              // Fork Media Hub: cartão sem borda, num tom acima do fundo — é
+              // assim que superfície clicável se anuncia no painel do produto.
+              // Selecionado ganha o azul de ação em fundo suave, que é sinal
+              // mais forte que uma borda de 1px e não mexe no tamanho da caixa.
               className={clsx(
-                'flex flex-col w-full text-center gap-[10px] border border-input p-[10px] hover:bg-seventh rounded-[8px]',
-                isSelected(item, selection) && 'bg-seventh border-primary'
+                'flex flex-col w-full text-center gap-[10px] p-[12px] rounded-[12px] transition-colors',
+                isSelected(item, selection)
+                  ? 'bg-[rgba(10,132,255,0.18)]'
+                  : 'bg-[#202023] hover:bg-[#29292D]'
               )}
               onClick={handleSelect(item)}
             >
@@ -141,7 +147,14 @@ export function withContinueProvider<TItem, TSelection>(
           ))}
         </div>
         <div>
-          <Button disabled={!selection || isSaving} loading={isSaving} onClick={handleSave}>
+          {/* `rounded-[10px]` é o raio dos botões do Media Hub; o Button do
+              Postiz não define nenhum e sai de canto vivo. */}
+          <Button
+            className="rounded-[10px]"
+            disabled={!selection || isSaving}
+            loading={isSaving}
+            onClick={handleSave}
+          >
             {isSaving ? 'Conectando…' : 'Conectar'}
           </Button>
         </div>
