@@ -358,11 +358,12 @@ export const ContinueIntegration: FC<{
   }
 
   // Show the two-step selection UI
+  //
+  // Uma coluna que cresce até um limite legível e respira nas bordas. A tela
+  // antiga travava em 550 px no desktop e encostava nas margens no celular — e
+  // muita conexão acontece no celular.
   if (twoStepState && Provider) {
     return (
-      {/* Uma coluna que cresce até um limite legível e respira nas bordas. A tela
-          antiga travava em 550 px no desktop e encostava nas margens no celular
-          — e muita conexão acontece no celular. */}
       <div className="flex flex-1 justify-center text-[#F5F5F7] px-[16px] py-[24px] sm:px-[24px] sm:py-[40px]">
         <div className="relative z-10 w-full max-w-[860px] m-auto">
           <div className="bg-[#161618] rounded-[16px] p-[20px] sm:p-[28px] flex flex-col gap-[20px] sm:gap-[24px]">
