@@ -38,10 +38,13 @@ export const FacebookContinue = withContinueProvider<FacebookItem, string>({
   isSelected: (item, selection) => selection === item.id,
   renderItem: (item) => (
     <>
-      <div>
-        <img className="w-full" src={item.picture.data.url} alt="profile" />
-      </div>
-      <div>{item.name}</div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="aspect-square w-full rounded-[8px] object-cover"
+        src={item.picture.data.url}
+        alt=""
+      />
+      <div className="text-[12.5px] leading-[17px] line-clamp-2 break-words">{item.name}</div>
     </>
   ),
 });

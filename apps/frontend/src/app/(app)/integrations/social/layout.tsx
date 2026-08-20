@@ -1,12 +1,20 @@
 import { ReactNode } from 'react';
 
+/**
+ * Sem isto a aba mostra a URL crua (`postiz.mediahub.social/inte…`), que é
+ * justamente o nome que o usuário não deveria ler em lugar nenhum.
+ */
+export const metadata = {
+  title: 'Conectando sua conta · Media Hub',
+};
+
 export default async function IntegrationLayout({
   children,
 }: {
   children: ReactNode;
 }) {
   return (
-    <div className="bg-[#050506] flex flex-1 min-h-screen w-screen">
+    <div className="bg-[#050506] flex flex-1 min-h-[100dvh] w-full overflow-x-hidden">
       {/*
         Fork Media Hub: o miolo desta tela (a grade de páginas e o botão) é o
         `with-continue-provider`, componente compartilhado que pinta com os

@@ -360,13 +360,15 @@ export const ContinueIntegration: FC<{
   // Show the two-step selection UI
   if (twoStepState && Provider) {
     return (
-      <div className="flex flex-1 items-center justify-center text-[#F5F5F7] relative overflow-hidden">
-        {/* Content */}
-        <div className="relative z-10 w-full max-w-[550px] mx-auto px-[20px]">
-          <div className="bg-[#161618] rounded-[16px] p-[32px] flex flex-col gap-[24px]">
+      {/* Uma coluna que cresce até um limite legível e respira nas bordas. A tela
+          antiga travava em 550 px no desktop e encostava nas margens no celular
+          — e muita conexão acontece no celular. */}
+      <div className="flex flex-1 justify-center text-[#F5F5F7] px-[16px] py-[24px] sm:px-[24px] sm:py-[40px]">
+        <div className="relative z-10 w-full max-w-[860px] m-auto">
+          <div className="bg-[#161618] rounded-[16px] p-[20px] sm:p-[28px] flex flex-col gap-[20px] sm:gap-[24px]">
             <div className="flex flex-col gap-[8px] text-center">
-              <h1 className="text-[24px] font-semibold">Escolha a conta</h1>
-              <p className="text-[14px] text-[#A1A1AA]">
+              <h1 className="text-[20px] sm:text-[24px] font-semibold">Escolha a conta</h1>
+              <p className="text-[13px] sm:text-[14px] text-[#A1A1AA]">
                 {`Selecione a página ou conta do ${providerDisplayName} que você quer conectar.`}
               </p>
             </div>

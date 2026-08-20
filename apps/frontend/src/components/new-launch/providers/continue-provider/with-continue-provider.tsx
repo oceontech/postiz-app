@@ -104,7 +104,7 @@ export function withContinueProvider<TItem, TSelection>(
 
     if (!isLoading && !resolvedData?.length) {
       return (
-        <div className="text-center flex flex-col justify-center items-center text-[18px] leading-[26px] h-[300px]">
+        <div className="text-center flex flex-col justify-center items-center gap-[8px] text-[15px] sm:text-[17px] leading-[24px] py-[40px]">
           {emptyStateMessages.map((msg, index) => (
             <span key={msg.key}>
               {msg.text}
@@ -121,12 +121,15 @@ export function withContinueProvider<TItem, TSelection>(
     }
 
     return (
-      <div className="flex flex-col gap-[20px]">
+      <div className="flex flex-col gap-[16px]">
         {/* Fork Media Hub: o texto vem cru do provider, sem `t()`. Esta tela
             aparece no meio da conexão de um canal do Media Hub, cujo idioma é
             pt-BR; a tradução em inglês do Postiz venceria o texto padrão. */}
-        <div>{titleDefault}</div>
-        <div className="grid grid-cols-3 justify-items-center select-none cursor-pointer gap-[10px]">
+        <div className="text-[14px] font-medium">{titleDefault}</div>
+        {/* Duas colunas no celular, mais conforme a tela cresce. A grade rola
+            dentro do cartão, para o botão nunca ficar abaixo da dobra quando a
+            conta tem trinta páginas. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 select-none cursor-pointer gap-[10px] max-h-[52vh] overflow-y-auto overflow-x-hidden pr-[4px]">
           {filteredData.map((item) => (
             <div
               key={getItemId(item)}
@@ -135,7 +138,7 @@ export function withContinueProvider<TItem, TSelection>(
               // Selecionado ganha o azul de ação em fundo suave, que é sinal
               // mais forte que uma borda de 1px e não mexe no tamanho da caixa.
               className={clsx(
-                'flex flex-col w-full text-center gap-[10px] p-[12px] rounded-[12px] transition-colors',
+                'flex flex-col w-full min-w-0 text-center gap-[8px] p-[10px] rounded-[12px] transition-colors',
                 isSelected(item, selection)
                   ? 'bg-[rgba(10,132,255,0.18)]'
                   : 'bg-[#202023] hover:bg-[#29292D]'
@@ -146,11 +149,11 @@ export function withContinueProvider<TItem, TSelection>(
             </div>
           ))}
         </div>
-        <div>
-          {/* `rounded-[10px]` é o raio dos botões do Media Hub; o Button do
-              Postiz não define nenhum e sai de canto vivo. */}
+        {/* Largura cheia no celular, onde o polegar mira uma faixa e não um
+            botão de 120 px encostado à esquerda. */}
+        <div className="flex justify-stretch sm:justify-end">
           <Button
-            className="rounded-[10px]"
+            className="rounded-[10px] w-full sm:w-auto"
             disabled={!selection || isSaving}
             loading={isSaving}
             onClick={handleSave}
