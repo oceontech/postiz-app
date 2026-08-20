@@ -13,9 +13,8 @@
  * #0A84FF) e os textos passaram a ser pt-BR literais — sem `useT`, porque a
  * tradução em inglês venceria o texto padrão.
  *
- * **Sem nome nem logo de marca, de propósito**: o Media Hub é white-label por
- * agência (plano Growth+), então estampar "Media Hub" aqui mostraria a marca
- * errada para o cliente de uma agência que assina com a própria.
+ * A marca do Media Hub aparece no topo (ver o layout desta rota): quem acabou de
+ * autorizar a conta na Meta precisa reconhecer para onde está voltando.
  *
  * Ao rebasear no upstream, conferir se estes quatro estados (carregando, erro,
  * conta conectada e seleção de conta) continuam existindo.
