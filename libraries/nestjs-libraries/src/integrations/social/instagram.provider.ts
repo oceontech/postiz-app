@@ -721,9 +721,49 @@ export class InstagramProvider
               )}`
             : ``;
 
+        // ------------------------------------------------------------
+        // Fork Media Hub — configurações avançadas
+        //
+        // A Meta não aceita os mesmos campos em todo lugar, e mandar um campo
+        // onde ele não vale faz o container inteiro falhar. Por isso cada um
+        // tem sua condição, e não um `if (settings)` genérico.
+        // ------------------------------------------------------------
+        const isImage = !hasExtension(m.path, 'mp4');
+
+        // Localização: vale em imagem, vídeo e carrossel; não em story.
+        const locationParam =
+          firstPost?.settings?.location_id && !isStory
+            ? `&location_id=${encodeURIComponent(firstPost.settings.location_id)}`
+            : ``;
+
+        // Marcação: com coordenadas em imagem, só username em vídeo — mandar
+        // x/y em vídeo é erro na API, não campo ignorado.
+        const userTagsParam =
+          firstPost?.settings?.user_tags?.length && !isStory
+            ? `&user_tags=${encodeURIComponent(
+                JSON.stringify(
+                  firstPost.settings.user_tags.map((t) =>
+                    isImage
+                      ? {
+                          username: t.username.replace(/^@/, ''),
+                          x: typeof t.x === 'number' ? t.x : 0.5,
+                          y: typeof t.y === 'number' ? t.y : 0.5,
+                        }
+                      : { username: t.username.replace(/^@/, '') }
+                  )
+                )
+              )}`
+            : ``;
+
+        // Texto alternativo: só imagem. Reels e stories não aceitam.
+        const altTextParam =
+          firstPost?.settings?.alt_text && isImage && !isStory
+            ? `&alt_text=${encodeURIComponent(firstPost.settings.alt_text)}`
+            : ``;
+
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/v20.0/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}${locationParam}${userTagsParam}${altTextParam}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -753,6 +793,15 @@ export class InstagramProvider
               : 'carousel',
           containers: medias,
           message: firstPost?.message || '',
+          // Fork Media Hub: primeiro comentário e fechar comentários acontecem
+          // DEPOIS do publish, com o id da mídia em mãos — então precisam
+          // atravessar o `checkPostStatus` até o `finalizePost`.
+          postActions: {
+            ...(firstPost?.settings?.first_comment
+              ? { firstComment: firstPost.settings.first_comment }
+              : {}),
+            ...(firstPost?.settings?.disable_comments ? { disableComments: true } : {}),
+          },
         },
       },
     ];
@@ -766,6 +815,8 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      /** Fork Media Hub: o que fazer depois que a mídia existir. */
+      postActions?: { firstComment?: string; disableComments?: boolean };
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -824,6 +875,51 @@ export class InstagramProvider
     return { status: 'ready', pendingData };
   }
 
+  /**
+   * O que só existe depois de a mídia estar publicada.
+   *
+   * Fork Media Hub. Primeiro comentário e fechar comentários não são campos do
+   * container — são chamadas próprias, com o id da mídia. Rodam aqui, no fim do
+   * `finalizePost`, quando esse id existe.
+   *
+   * **Nenhuma delas pode derrubar a publicação.** O post já está no ar; falhar
+   * o comentário e reportar erro faria o Postiz tentar publicar de novo, e o
+   * cliente receberia o post duas vezes. Por isso cada ação é isolada e o erro
+   * só vai para o log.
+   */
+  private async runPostActions(
+    mediaId: string,
+    accessToken: string,
+    type: string,
+    actions?: { firstComment?: string; disableComments?: boolean }
+  ): Promise<void> {
+    if (!mediaId || !actions) return;
+
+    if (actions.firstComment) {
+      try {
+        await this.fetch(
+          `https://${type}/v20.0/${mediaId}/comments?message=${encodeURIComponent(
+            actions.firstComment
+          )}&access_token=${accessToken}`,
+          { method: 'POST' }
+        );
+      } catch (err) {
+        console.error('[instagram] primeiro comentário falhou', err);
+      }
+    }
+
+    if (actions.disableComments) {
+      try {
+        await this.fetch(
+          `https://${type}/v20.0/${mediaId}?comment_enabled=false&access_token=${accessToken}`,
+          { method: 'POST' }
+        );
+      } catch (err) {
+        console.error('[instagram] fechar comentários falhou', err);
+      }
+    }
+  }
+
   override async finalizePost(
     token: string,
     pendingData: {
@@ -832,6 +928,8 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      /** Fork Media Hub: o que fazer depois que a mídia existir. */
+      postActions?: { firstComment?: string; disableComments?: boolean };
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -863,6 +961,13 @@ export class InstagramProvider
         ).json();
         lastMediaId = mediaId;
       }
+
+      await this.runPostActions(
+        lastMediaId,
+        accessToken,
+        pendingData.type,
+        pendingData.postActions
+      );
 
       return {
         status: 'completed',
@@ -914,6 +1019,8 @@ export class InstagramProvider
         }
       )
     ).json();
+
+    await this.runPostActions(mediaId, accessToken, pendingData.type, pendingData.postActions);
 
     return {
       status: 'completed',
@@ -1123,6 +1230,57 @@ export class InstagramProvider
     );
 
     return analytics;
+  }
+
+  /**
+   * Busca lugares para o campo de localização.
+   *
+   * Fork Media Hub. `location_id` é um id de Página da Meta, não um texto — sem
+   * uma busca, a única forma de preencher seria a pessoa achar o id sozinha, o
+   * que ninguém faz.
+   *
+   * Precisa de `@Tool` para a API pública aceitar a chamada: o controller de
+   * `integration-trigger` só executa métodos registrados como ferramenta.
+   *
+   * Usa `graph.facebook.com` sempre — a busca de páginas não existe em
+   * `graph.instagram.com`, então uma conta conectada por Instagram Login volta
+   * vazia em vez de erro.
+   */
+  @Tool({
+    description: 'Search places to use as the location of an Instagram post',
+    dataSchema: [
+      {
+        key: 'q',
+        type: 'string',
+        description: 'Place name to search for',
+      },
+    ],
+  })
+  async locationSearch(token: string, data: { q?: string }) {
+    const [accessToken] = token.split('___');
+    const q = (data?.q || '').trim();
+    if (!q) return [];
+
+    try {
+      const res = await (
+        await this.fetch(
+          `https://graph.facebook.com/v20.0/pages/search?q=${encodeURIComponent(
+            q
+          )}&fields=id,name,location&limit=10&access_token=${accessToken}`
+        )
+      ).json();
+
+      return (res?.data || []).map((place: any) => ({
+        id: place.id,
+        name: place.name,
+        city: place?.location?.city || '',
+        country: place?.location?.country || '',
+      }));
+    } catch {
+      // Busca é conveniência: falhar aqui não pode impedir a pessoa de
+      // terminar o post sem localização.
+      return [];
+    }
   }
 
   music(accessToken: string, data: { q: string }) {
